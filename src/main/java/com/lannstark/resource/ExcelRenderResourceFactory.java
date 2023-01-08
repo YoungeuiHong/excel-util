@@ -36,6 +36,8 @@ public final class ExcelRenderResourceFactory {
 		ExcelColumnStyle classDefinedHeaderStyle = getHeaderExcelColumnStyle(type);
 		ExcelColumnStyle classDefinedBodyStyle = getBodyExcelColumnStyle(type);
 
+		// TODO Depth가 있는 헤더를 표현할 수 있도록 변경
+		// TODO Merged Region을 표현하려면 CellRangeAddress가 필요하다. firstRow, lastRow, firstCols, lastCols
 		for (Field field : getAllFields(type)) {
 			if (field.isAnnotationPresent(ExcelColumn.class)) {
 				ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);

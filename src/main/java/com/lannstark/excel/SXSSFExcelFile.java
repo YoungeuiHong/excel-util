@@ -62,6 +62,7 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 
 	protected abstract void renderExcel(List<T> data);
 
+	// TODO : Depth가 있는 헤더를 표현할 수 있도록 하기
 	protected void renderHeadersWithNewSheet(Sheet sheet, int rowIndex, int columnStartIndex) {
 		Row row = sheet.createRow(rowIndex);
 		int columnIndex = columnStartIndex;
@@ -69,6 +70,8 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 			Cell cell = row.createCell(columnIndex++);
 			cell.setCellStyle(resource.getCellStyle(dataFieldName, ExcelRenderLocation.HEADER));
 			cell.setCellValue(resource.getExcelHeaderName(dataFieldName));
+			// TODO merge cells
+			// sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
 		}
 	}
 
