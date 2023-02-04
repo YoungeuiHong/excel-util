@@ -4,11 +4,11 @@ import java.util.Objects;
 
 public final class ExcelCellKey {
 
-	private final String dataFieldName;
+	private final String fieldPath;
 	private final ExcelRenderLocation excelRenderLocation;
 
-	private ExcelCellKey(String dataFieldName, ExcelRenderLocation excelRenderLocation) {
-		this.dataFieldName = dataFieldName;
+	private ExcelCellKey(String fieldPath, ExcelRenderLocation excelRenderLocation) {
+		this.fieldPath = fieldPath;
 		this.excelRenderLocation = excelRenderLocation;
 	}
 
@@ -22,13 +22,13 @@ public final class ExcelCellKey {
 		if (this == o) return true;
 		if (o == null || getClass() != o.getClass()) return false;
 		ExcelCellKey that = (ExcelCellKey) o;
-		return Objects.equals(dataFieldName, that.dataFieldName) &&
+		return Objects.equals(fieldPath, that.fieldPath) &&
 				excelRenderLocation == that.excelRenderLocation;
 	}
 
 	@Override
 	public int hashCode() {
-		return Objects.hash(dataFieldName, excelRenderLocation);
+		return Objects.hash(fieldPath, excelRenderLocation);
 	}
 
 }

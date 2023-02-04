@@ -1,37 +1,32 @@
 package com.lannstark.resource;
 
 import com.lannstark.resource.collection.PreCalculatedCellStyleMap;
+import lombok.Getter;
 import org.apache.poi.ss.usermodel.CellStyle;
 
 import java.util.List;
-import java.util.Map;
 
+@Getter
 public class ExcelRenderResource {
+    private PreCalculatedCellStyleMap styleMap;
+    private ExcelHeader excelHeader;
+    private List<String> fieldPaths;
+    private List<String> leafFieldPaths;
 
-	private PreCalculatedCellStyleMap styleMap;
+    public ExcelRenderResource(
+            PreCalculatedCellStyleMap styleMap,
+            ExcelHeader excelHeader,
+            List<String> fieldPaths,
+            List<String> leafFieldPaths
+    ) {
+        this.styleMap = styleMap;
+        this.excelHeader = excelHeader;
+        this.fieldPaths = fieldPaths;
+        this.leafFieldPaths = leafFieldPaths;
+    }
 
-	// TODO dataFieldName -> excelHeaderName Map Abstraction
-	private Map<String, String> excelHeaderNames;
-	private List<String> dataFieldNames;
-
-	// TODO Depth가 있는 헤더를 표현할 수 있도록 수정하기
-	public ExcelRenderResource(PreCalculatedCellStyleMap styleMap,
-							   Map<String, String> excelHeaderNames, List<String> dataFieldNames) {
-		this.styleMap = styleMap;
-		this.excelHeaderNames = excelHeaderNames;
-		this.dataFieldNames = dataFieldNames;
-	}
-
-	public CellStyle getCellStyle(String dataFieldName, ExcelRenderLocation excelRenderLocation) {
-		return styleMap.get(ExcelCellKey.of(dataFieldName, excelRenderLocation));
-	}
-
-	public String getExcelHeaderName(String dataFieldName) {
-		return excelHeaderNames.get(dataFieldName);
-	}
-
-	public List<String> getDataFieldNames() {
-		return dataFieldNames;
-	}
+    public CellStyle getCellStyle(String dataFieldName, ExcelRenderLocation excelRenderLocation) {
+        return styleMap.get(ExcelCellKey.of(dataFieldName, excelRenderLocation));
+    }
 
 }

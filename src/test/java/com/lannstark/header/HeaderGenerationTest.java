@@ -2,6 +2,7 @@ package com.lannstark.header;
 
 import com.google.gson.Gson;
 import com.lannstark.ExcelColumn;
+import com.lannstark.dto.StudentDto;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,6 +13,8 @@ import org.junit.jupiter.api.Test;
 import java.lang.reflect.Field;
 import java.util.*;
 
+import static org.assertj.core.api.Assertions.assertThat;
+
 public class HeaderGenerationTest {
 
     private Gson gson = new Gson();
@@ -20,7 +23,7 @@ public class HeaderGenerationTest {
     @DisplayName("엑셀 헤더의 Depth 계산하기")
     public void getDepthOfHeader() {
         int maxDepth = getDepthOfHeader(StudentDto.class);
-        System.out.println("maxDepth: " + maxDepth);
+        assertThat(maxDepth == 2);
     }
 
     @Test
@@ -37,7 +40,6 @@ public class HeaderGenerationTest {
         List<FieldInfo> fieldInfos = getAllFieldInfo(StudentDto.class, "com.lannstark");
         System.out.println(gson.toJson(fieldInfos));
     }
-
 
     /**
      * 엑셀 Header의 Depth (= 세로 높이) 계산하기

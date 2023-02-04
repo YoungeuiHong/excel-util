@@ -51,8 +51,9 @@ public final class OneSheetExcelFile<T> extends SXSSFExcelFile<T> {
 		}
 
 		// 2. Render Body
+		int bodyStartRowIndex = currentRowIndex + resource.getExcelHeader().getHeaderHeight() - 1;
 		for (Object renderedData : data) {
-			renderBody(renderedData, currentRowIndex++, COLUMN_START_INDEX);
+			renderBody(renderedData, bodyStartRowIndex++, COLUMN_START_INDEX);
 		}
 	}
 

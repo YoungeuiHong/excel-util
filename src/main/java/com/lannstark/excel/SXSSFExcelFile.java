@@ -1,22 +1,18 @@
 package com.lannstark.excel;
 
 import com.lannstark.exception.ExcelInternalException;
-import com.lannstark.resource.DataFormatDecider;
-import com.lannstark.resource.DefaultDataFormatDecider;
-import com.lannstark.resource.ExcelRenderLocation;
-import com.lannstark.resource.ExcelRenderResource;
-import com.lannstark.resource.ExcelRenderResourceFactory;
+import com.lannstark.resource.*;
 import org.apache.poi.ss.SpreadsheetVersion;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.util.CellRangeAddress;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 import static com.lannstark.utils.SuperClassReflectionUtils.getField;
 
@@ -62,34 +58,63 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 
 	protected abstract void renderExcel(List<T> data);
 
-	// TODO : Depth가 있는 헤더를 표현할 수 있도록 하기
-	protected void renderHeadersWithNewSheet(Sheet sheet, int rowIndex, int columnStartIndex) {
-		Row row = sheet.createRow(rowIndex);
-		int columnIndex = columnStartIndex;
-		for (String dataFieldName : resource.getDataFieldNames()) {
-			Cell cell = row.createCell(columnIndex++);
-			cell.setCellStyle(resource.getCellStyle(dataFieldName, ExcelRenderLocation.HEADER));
-			cell.setCellValue(resource.getExcelHeaderName(dataFieldName));
-			// TODO merge cells
-			// sheet.addMergedRegion(new CellRangeAddress(firstRow, lastRow, firstCol, lastCol));
+	protected void renderHeadersWithNewSheet(Sheet sheet, int rowStartIndex, int columnStartIndex) {
+		// 헤더 높이만큼 Row 생성하기
+		int headerHeight = resource.getExcelHeader().getHeaderHeight();
+		for (int depth = 0; depth < headerHeight; depth++) {
+			if (sheet.getLastRowNum() < rowStartIndex + depth) {
+				sheet.createRow(rowStartIndex + depth);
+			}
+		}
+
+		for (String fieldPath : resource.getFieldPaths()) {
+			ExcelHeaderCell headerCell = resource.getExcelHeader().getExcelHeaderCell(fieldPath);
+			headerCell.adjustFirstIndex(rowStartIndex, columnStartIndex);
+			Row row = sheet.getRow(headerCell.getFirstRow());
+			Cell cell = row.createCell(headerCell.getFirstCol());
+			cell.setCellStyle(resource.getCellStyle(fieldPath, ExcelRenderLocation.HEADER));
+			cell.setCellValue(headerCell.getHeaderName());
+
+			if (headerCell.containsMoreThanOneCell()) {
+				sheet.addMergedRegion(new CellRangeAddress(
+						headerCell.getFirstRow(), headerCell.getLastRow(), headerCell.getFirstCol(), headerCell.getLastCol()));
+			}
 		}
 	}
 
 	protected void renderBody(Object data, int rowIndex, int columnStartIndex) {
 		Row row = sheet.createRow(rowIndex);
 		int columnIndex = columnStartIndex;
-		for (String dataFieldName : resource.getDataFieldNames()) {
+		for (String fieldPath : resource.getFieldPaths()) {
+			// 말단 Field인 경우에만 Body에 데이터 작성
+			if (!resource.getLeafFieldPaths().contains(fieldPath)) {
+				continue;
+			}
 			Cell cell = row.createCell(columnIndex++);
 			try {
-				Field field = getField(data.getClass(), (dataFieldName));
-				field.setAccessible(true);
-				cell.setCellStyle(resource.getCellStyle(dataFieldName, ExcelRenderLocation.BODY));
-				Object cellValue = field.get(data);
+				cell.setCellStyle(resource.getCellStyle(fieldPath, ExcelRenderLocation.BODY));
+				Object cellValue = getDataValue(fieldPath, data);
 				renderCellValue(cell, cellValue);
 			} catch (Exception e) {
 				throw new ExcelInternalException(e.getMessage(), e);
 			}
 		}
+	}
+
+	// TODO 적절한 위치로 메서드 이동시키기
+	private Object getDataValue(String fieldPath, Object dtoData) throws Exception {
+		//
+		Queue<String> fieldNameQueue = new LinkedList<>(Arrays.asList(fieldPath.split(",")));
+		Object data = dtoData;
+		Field field = null;
+
+		while (!fieldNameQueue.isEmpty()) {
+			field = getField(data.getClass(), fieldNameQueue.poll());
+			field.setAccessible(true);
+			data = field.get(data);
+		}
+
+		return data;
 	}
 
 	private void renderCellValue(Cell cell, Object cellValue) {

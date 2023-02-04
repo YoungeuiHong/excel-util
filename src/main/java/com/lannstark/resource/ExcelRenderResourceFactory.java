@@ -13,52 +13,109 @@ import org.apache.poi.ss.usermodel.Workbook;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
-import static com.lannstark.utils.SuperClassReflectionUtils.getAllFields;
 import static com.lannstark.utils.SuperClassReflectionUtils.getAnnotation;
 
 /**
  * ExcelRenderResourceFactory
- *
  */
 public final class ExcelRenderResourceFactory {
 
+	// TODO Refactor
 	public static ExcelRenderResource prepareRenderResource(Class<?> type, Workbook wb,
 															DataFormatDecider dataFormatDecider) {
+		// ExcelRenderResource 필드
 		PreCalculatedCellStyleMap styleMap = new PreCalculatedCellStyleMap(dataFormatDecider);
-		Map<String, String> headerNamesMap = new LinkedHashMap<>();
-		List<String> fieldNames = new ArrayList<>();
+		ExcelHeader excelHeader = new ExcelHeader();
+		List<String> fieldPaths = new ArrayList<>();
+		List<String> leafFieldPaths = new ArrayList<>();
 
+		// Default Style
 		ExcelColumnStyle classDefinedHeaderStyle = getHeaderExcelColumnStyle(type);
 		ExcelColumnStyle classDefinedBodyStyle = getBodyExcelColumnStyle(type);
 
-		// TODO Depth가 있는 헤더를 표현할 수 있도록 변경
-		// TODO Merged Region을 표현하려면 CellRangeAddress가 필요하다. firstRow, lastRow, firstCols, lastCols
-		for (Field field : getAllFields(type)) {
-			if (field.isAnnotationPresent(ExcelColumn.class)) {
+		// class 내에 @ExcelColumn 어노테이션이 붙은 모든 Field를 탐색하기
+		Queue<FieldPathInfo> fieldQueue = new LinkedList<>();
+		List<FieldPathInfo> fieldInfos = Arrays.stream(type.getDeclaredFields()).map(field -> getFieldPathInfo("", field)).collect(Collectors.toList());
+		fieldQueue.addAll(fieldInfos);
+
+		int currRow = 0;
+		int currDepth = 1;
+
+		while (!fieldQueue.isEmpty()) {
+			int currCol = 0;
+
+			int queueSize = fieldQueue.size();
+			for (int i = 0; i < queueSize; i++) {
+				FieldPathInfo fieldInfo = fieldQueue.poll();
+				String currFieldPath = fieldInfo.getFieldPath();
+				Field field = fieldInfo.getField();
+
+				// 추가적으로 탐색해야 하는 자식 요소는 Queue에 넣기
+				List<FieldPathInfo> childFieldInfos = new ArrayList<>();
+				for (Field _child : field.getType().getDeclaredFields()) {
+					if (_child.isAnnotationPresent(ExcelColumn.class)) {
+						FieldPathInfo childFieldInfo = getFieldPathInfo(currFieldPath, _child);
+						fieldInfos.add(childFieldInfo);
+						childFieldInfos.add(childFieldInfo);
+					}
+				}
+				fieldQueue.addAll(childFieldInfos);
+
+				// Field Path 목록에 추가
+				fieldPaths.add(currFieldPath);
+
+				// 자식 요소가 더 이상 없으면 말단 필드 목록에 추가
+				if (childFieldInfos.isEmpty()) {
+					leafFieldPaths.add(currFieldPath);
+				}
+
+				// @ExcelColumn 어노테이션 정보 가져오기
 				ExcelColumn annotation = field.getAnnotation(ExcelColumn.class);
+
+				// StyleMap에 정보 넣기
+				// - Header 스타일
 				styleMap.put(
 						String.class,
-						ExcelCellKey.of(field.getName(), ExcelRenderLocation.HEADER),
+						ExcelCellKey.of(currFieldPath, ExcelRenderLocation.HEADER),
 						getCellStyle(decideAppliedStyleAnnotation(classDefinedHeaderStyle, annotation.headerStyle())), wb);
+
+				// - Body 스타일
 				Class<?> fieldType = field.getType();
 				styleMap.put(
 						fieldType,
-						ExcelCellKey.of(field.getName(), ExcelRenderLocation.BODY),
+						ExcelCellKey.of(currFieldPath, ExcelRenderLocation.BODY),
 						getCellStyle(decideAppliedStyleAnnotation(classDefinedBodyStyle, annotation.bodyStyle())), wb);
-				fieldNames.add(field.getName());
-				headerNamesMap.put(field.getName(), annotation.headerName());
+
+				// Excel Header 정보 셋팅
+				int heightOfHeader = getHeightOfHeader(type);
+				excelHeader.setHeaderHeight(heightOfHeader);
+				int numberOfChildren = childFieldInfos.size();
+				int rowHeight = numberOfChildren == 0 ? heightOfHeader - currDepth + 1 : 1;
+				int colSpan = numberOfChildren == 0 ? 1 : numberOfChildren;
+				ExcelHeaderCell excelHeaderCell = new ExcelHeaderCell(
+						annotation.headerName(),
+						currRow,
+						currRow + rowHeight -1,
+						currCol,
+						currCol + colSpan -1
+				);
+				excelHeader.put(currFieldPath, excelHeaderCell);
+				currCol = currCol + colSpan; // 현재 위치한 Column의 인덱스 변경
 			}
+
+			// 현재 위치한 Row의 인덱스와 Header의 Depth 변경
+			currDepth++;
+			currRow++;
 		}
 
 		if (styleMap.isEmpty()) {
 			throw new NoExcelColumnAnnotationsException(String.format("Class %s has not @ExcelColumn at all", type));
 		}
-		return new ExcelRenderResource(styleMap, headerNamesMap, fieldNames);
+
+		return new ExcelRenderResource(styleMap, excelHeader, fieldPaths, leafFieldPaths);
 	}
 
 	private static ExcelColumnStyle getHeaderExcelColumnStyle(Class<?> clazz) {
@@ -113,4 +170,49 @@ public final class ExcelRenderResourceFactory {
 		}
 	}
 
+	/**
+	 * 엑셀 Header Depth 계산에 사용되는 DFS 메서드
+	 * @param clazz
+	 * @param currDepth
+	 * @return
+	 */
+	private static int getMaxDepth(Class<?> clazz, int currDepth) {
+		// 자식 필드 중 @ExcelColumn이 달린 필드가 없다면 현재 depth를 리턴
+		if (!Arrays.stream(clazz.getDeclaredFields()).anyMatch(_child -> _child.isAnnotationPresent(ExcelColumn.class))) {
+			return currDepth;
+		} else {
+			int maxDepth = 1;
+			currDepth++;
+			for (Field field : clazz.getDeclaredFields()) {
+				int depth = getMaxDepth(field.getType(), currDepth);
+				maxDepth = Math.max(depth, maxDepth);
+			}
+			return maxDepth;
+		}
+	}
+
+	/**
+	 * Header 높이 계산
+	 * @param clazz
+	 * @return
+	 */
+	private static int getHeightOfHeader(Class<?> clazz) {
+		//
+		return getMaxDepth(clazz, 0);
+	}
+
+	/**
+	 * 부모 Field의 fieldPath와 본인 Field의 name을 합쳐서 fieldPath를 리턴하는 메서드
+	 * @param fieldPath
+	 * @param field
+	 * @return
+	 */
+	private static FieldPathInfo getFieldPathInfo(String fieldPath, Field field) {
+		if (!fieldPath.equals("") && fieldPath != null) {
+			return new FieldPathInfo(String.format("%s,%s", fieldPath, field.getName()), field);
+		} else {
+			return new FieldPathInfo(field.getName(), field);
+		}
+
+	}
 }
