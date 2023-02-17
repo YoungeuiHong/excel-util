@@ -1,4 +1,4 @@
-package com.lannstark.excel;
+package com.lannstark.excel.export;
 
 import com.lannstark.exception.ExcelInternalException;
 import com.lannstark.resource.*;

@@ -1,6 +1,6 @@
-package com.lannstark.excel.multiplesheet;
+package com.lannstark.excel.export.multiplesheet;
 
-import com.lannstark.excel.SXSSFExcelFile;
+import com.lannstark.excel.export.SXSSFExcelFile;
 import com.lannstark.resource.DataFormatDecider;
 import org.apache.commons.compress.archivers.zip.Zip64Mode;
 

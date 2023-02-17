@@ -1,4 +1,4 @@
-package com.lannstark.excel;
+package com.lannstark.excel.export;
 
 import java.io.IOException;
 import java.io.OutputStream;
