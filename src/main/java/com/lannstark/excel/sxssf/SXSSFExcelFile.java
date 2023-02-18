@@ -134,7 +134,7 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 		stream.close();
 	}
 
-	public List<Object> read() throws IOException {
+	public <T> List<T> read(Class<T> type) throws IOException {
 		// SXSSF Excel is a readonly file.
 		return null;
 	}

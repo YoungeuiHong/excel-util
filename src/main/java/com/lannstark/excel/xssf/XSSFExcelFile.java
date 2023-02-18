@@ -19,25 +19,23 @@ import static com.lannstark.utils.JsonUtils.mapper;
 public abstract class XSSFExcelFile<T> implements ExcelFile<T> {
     protected XSSFWorkbook wb;
     protected ExcelImporterResource resource;
-    protected Class<T> dataType;
     protected List<ObjectNode> data = new ArrayList<>();
     protected final DataFormatter dataFormatter = new DataFormatter();
 
     protected XSSFExcelFile(InputStream inputStream, Class<T> type) throws IOException {
         this.wb = new XSSFWorkbook(inputStream);
         this.resource = ExcelImporterResourceFactory.prepareImporterResource(type);
-        this.dataType = type;
         renderJsonData();
     }
 
     protected void renderJsonData() {}
 
-    public List<Object> read() throws IOException {
-        List<Object> dtoList = new ArrayList<>();
+    public <T> List<T> read(Class<T> type) throws IOException {
+        List<T> dtoList = new ArrayList<>();
         for (ObjectNode rootNode : data) {
             String json = mapper.writeValueAsString(rootNode);
-            Object dto = gson.fromJson(json, this.dataType);
-            dtoList.add(dto);
+            Object dto = gson.fromJson(json, type);
+            dtoList.add(type.cast(dto));
         }
         return dtoList;
     }

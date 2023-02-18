@@ -13,7 +13,7 @@ import java.io.InputStream;
 import static com.lannstark.utils.JsonUtils.addJsonNode;
 import static com.lannstark.utils.JsonUtils.mapper;
 
-public final class OneSheetXSSFExcel<T> extends XSSFExcelFile {
+public final class OneSheetXSSFExcel<T> extends XSSFExcelFile<T> {
 
     public OneSheetXSSFExcel(InputStream inputStream, Class type) throws IOException {
         super(inputStream, type);

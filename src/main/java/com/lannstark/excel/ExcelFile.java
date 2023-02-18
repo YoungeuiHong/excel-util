@@ -8,7 +8,7 @@ public interface ExcelFile<T> {
 
 	void write(OutputStream stream) throws IOException;
 
-	List<Object> read() throws IOException;
+	<T> List<T> read(Class<T> type) throws IOException;
 
 	void addRows(List<T> data);
 
