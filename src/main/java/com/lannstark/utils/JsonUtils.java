@@ -13,23 +13,24 @@ public final class JsonUtils {
 
     public static void addJsonNode(ObjectNode rootNode, String fieldSimpleName, String jsonPointer, String value) {
         ValueNode node = rootNode.nullNode();
+        String numericValue = value.replaceAll("[^0-9.]", "");
 
         switch (fieldSimpleName) {
             case "byte":
             case "short":
-                node = new ShortNode(Short.valueOf(value));
+                node = new ShortNode(Short.valueOf(numericValue));
                 break;
             case "int":
-                node = new IntNode(Integer.valueOf(value));
+                node = new IntNode(Integer.valueOf(numericValue));
                 break;
             case "long":
-                node = new LongNode(Long.valueOf(value));
+                node = new LongNode(Long.valueOf(numericValue));
                 break;
             case "float":
-                node = new FloatNode(Float.valueOf(value));
+                node = new FloatNode(Float.valueOf(numericValue));
                 break;
             case "double":
-                node = new DoubleNode(Double.valueOf(value));
+                node = new DoubleNode(Double.valueOf(numericValue));
                 break;
             case "boolean":
                 node = BooleanNode.valueOf(Boolean.valueOf(value));
