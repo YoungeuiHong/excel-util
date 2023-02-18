@@ -176,7 +176,7 @@ public final class ExcelRenderResourceFactory {
 	 * @param currDepth
 	 * @return
 	 */
-	private static int getMaxDepth(Class<?> clazz, int currDepth) {
+	public static int getMaxDepth(Class<?> clazz, int currDepth) {
 		// 자식 필드 중 @ExcelColumn이 달린 필드가 없다면 현재 depth를 리턴
 		if (!Arrays.stream(clazz.getDeclaredFields()).anyMatch(_child -> _child.isAnnotationPresent(ExcelColumn.class))) {
 			return currDepth;
@@ -196,7 +196,7 @@ public final class ExcelRenderResourceFactory {
 	 * @param clazz
 	 * @return
 	 */
-	private static int getHeightOfHeader(Class<?> clazz) {
+	public static int getHeightOfHeader(Class<?> clazz) {
 		//
 		return getMaxDepth(clazz, 0);
 	}
