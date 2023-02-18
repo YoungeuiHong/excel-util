@@ -1,5 +1,6 @@
-package com.lannstark.excel.export;
+package com.lannstark.excel.sxssf;
 
+import com.lannstark.excel.ExcelFile;
 import com.lannstark.exception.ExcelInternalException;
 import com.lannstark.resource.*;
 import org.apache.poi.ss.SpreadsheetVersion;
@@ -131,6 +132,11 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 		wb.close();
 		wb.dispose();
 		stream.close();
+	}
+
+	public List<Object> read() throws IOException {
+		// SXSSF Excel is a readonly file.
+		return null;
 	}
 
 }

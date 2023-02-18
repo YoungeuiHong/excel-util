@@ -1,6 +1,6 @@
-package com.lannstark.excel.export.onesheet;
+package com.lannstark.excel.sxssf.onesheet;
 
-import com.lannstark.excel.export.SXSSFExcelFile;
+import com.lannstark.excel.sxssf.SXSSFExcelFile;
 import com.lannstark.resource.DataFormatDecider;
 
 import java.util.List;
