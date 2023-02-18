@@ -1,8 +1,6 @@
 package com.lannstark.dto;
 
 import com.lannstark.ExcelColumn;
-import com.lannstark.ExcelColumnStyle;
-import com.lannstark.style.DefaultExcelCellStyle;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -14,22 +12,10 @@ import lombok.Setter;
 @AllArgsConstructor
 public class Grade {
     //
-    @ExcelColumn(
-            headerName = "Korean",
-            headerStyle = @ExcelColumnStyle(excelCellStyleClass = DefaultExcelCellStyle.class, enumName = "BLUE_HEADER"),
-            bodyStyle = @ExcelColumnStyle(excelCellStyleClass = DefaultExcelCellStyle.class, enumName = "BODY")
-    )
+    @ExcelColumn(headerName = "Korean", columnIndex = 5)
     private int korean;
-    @ExcelColumn(
-            headerName = "English",
-            headerStyle = @ExcelColumnStyle(excelCellStyleClass = DefaultExcelCellStyle.class, enumName = "BLUE_HEADER"),
-            bodyStyle = @ExcelColumnStyle(excelCellStyleClass = DefaultExcelCellStyle.class, enumName = "BODY")
-    )
+    @ExcelColumn(headerName = "English", columnIndex = 4)
     private int english;
-    @ExcelColumn(
-            headerName = "Math",
-            headerStyle = @ExcelColumnStyle(excelCellStyleClass = DefaultExcelCellStyle.class, enumName = "BLUE_HEADER"),
-            bodyStyle = @ExcelColumnStyle(excelCellStyleClass = DefaultExcelCellStyle.class, enumName = "BODY")
-    )
+    @ExcelColumn(headerName = "Math", columnIndex = 3)
     private int math;
 }
