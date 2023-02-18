@@ -24,12 +24,12 @@ public final class ExcelImporterResourceFactory {
 
     private static void setExcelImportInfo(Class<?> type) {
         ExcelImport excelImport = (ExcelImport) getAnnotation(type, ExcelImport.class);
-        if (excelImport == null) return;
-        if (excelImport.rowStartIndex() < 0) {
+        if (excelImport == null || excelImport.rowStartIndex() < 0) {
             ROW_START_IDX = getHeightOfHeader(type);
         } else {
             ROW_START_IDX = excelImport.rowStartIndex();
         }
+        if (excelImport == null) return;
         COLUMN_START_IDX = excelImport.columnStartIndex();
         isColumnIndexAssigned = excelImport.isColumnIndexAssigned();
     }
