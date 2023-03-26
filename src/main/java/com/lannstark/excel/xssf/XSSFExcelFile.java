@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lannstark.excel.ExcelFile;
 import com.lannstark.resource.ExcelImporterResource;
 import com.lannstark.resource.ExcelImporterResourceFactory;
+import com.lannstark.resource.collection.HeaderNode;
 import org.apache.poi.ss.usermodel.DataFormatter;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 
@@ -28,6 +29,12 @@ public abstract class XSSFExcelFile<T> implements ExcelFile<T> {
         renderJsonData();
     }
 
+    protected XSSFExcelFile(InputStream inputStream, HeaderNode rootNode) throws  IOException {
+        this.wb = new XSSFWorkbook(inputStream);
+        this.resource = ExcelImporterResourceFactory.prepareImporterResource(rootNode);
+        renderJsonData();
+    }
+
     protected void renderJsonData() {}
 
     public <T> List<T> read(Class<T> type) throws IOException {
@@ -38,6 +45,15 @@ public abstract class XSSFExcelFile<T> implements ExcelFile<T> {
             dtoList.add(type.cast(dto));
         }
         return dtoList;
+    }
+
+    public List<Object> read() throws IOException {
+        List<Object> dataList = new ArrayList<>();
+        for (ObjectNode node : data) {
+            String json = mapper.writeValueAsString(node);
+            dataList.add(gson.fromJson(json, Object.class));
+        }
+        return dataList;
     }
 
     public void write(OutputStream stream) throws IOException {

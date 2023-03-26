@@ -175,6 +175,11 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 		return null;
 	}
 
+	public List<Object> read() throws IOException {
+		// SXSSF Excel is a readonly file.
+		return null;
+	}
+
 	private void setBordersToMergedCells(Sheet sheet) {
 		List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
 		for (CellRangeAddress rangeAddress : mergedRegions) {

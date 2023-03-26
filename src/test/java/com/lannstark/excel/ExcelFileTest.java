@@ -76,6 +76,16 @@ public class ExcelFileTest {
         System.out.println(gson.toJson(data));
     }
 
+    @Test
+    @DisplayName("Import one sheet XSSF Excel file (Case: HeaderNode)")
+    public void importOneSheetXSSFExcelFileViaHeaderNode() throws IOException {
+        createHeaderNodeExcel();
+        FileInputStream inputStream = new FileInputStream(new File(String.join(File.separator, RESOURCES_PATH, "header_node_excel_test.xlsx")));
+        ExcelFile excelFile = new OneSheetXSSFExcel(inputStream, getSampleHeaderNode());
+        List<Object> data = excelFile.read();
+        System.out.println(gson.toJson(data));
+    }
+
     private List<StudentDto> getSampleStudentDtoList() {
         //
         List<StudentDto> data = Arrays.asList(
@@ -105,6 +115,12 @@ public class ExcelFileTest {
     private void createMultiDepthHeaderExcel() throws IOException {
         ExcelFile excelFile = new OneSheetExcelFile(getSampleStudentDtoList(), StudentDto.class);
         String fileName = String.join(File.separator, RESOURCES_PATH, "excel_test.xlsx");
+        excelFile.write(new FileOutputStream(new File(fileName)));
+    }
+
+    private void createHeaderNodeExcel() throws IOException {
+        ExcelFile excelFile = new OneSheetExcelFile(getSampleObjectNodeData(), getSampleHeaderNode());
+        String fileName = String.join(File.separator, RESOURCES_PATH, "header_node_excel_test.xlsx");
         excelFile.write(new FileOutputStream(new File(fileName)));
     }
 

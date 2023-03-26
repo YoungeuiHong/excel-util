@@ -2,6 +2,7 @@ package com.lannstark.resource;
 
 import com.lannstark.ExcelColumn;
 import com.lannstark.ExcelImport;
+import com.lannstark.resource.collection.HeaderNode;
 
 import java.lang.reflect.Field;
 import java.util.*;
@@ -20,6 +21,11 @@ public final class ExcelImporterResourceFactory {
         setExcelImportInfo(type);
         List<ImportFieldInfo> importFieldInfoList = getImportFieldInfos(type);
         return new ExcelImporterResource(importFieldInfoList, ROW_START_IDX, COLUMN_START_IDX);
+    }
+
+    public static ExcelImporterResource prepareImporterResource(HeaderNode rootNode) {
+        List<ImportFieldInfo> importFieldInfoList = getImportFieldInfos(rootNode);
+        return new ExcelImporterResource(importFieldInfoList, rootNode.getHeightOfHeaderNode(), COLUMN_START_IDX);
     }
 
     private static void setExcelImportInfo(Class<?> type) {
@@ -87,5 +93,37 @@ public final class ExcelImporterResourceFactory {
 
     }
 
+    private static List<ImportFieldInfo> getImportFieldInfos(HeaderNode rootNode) {
+        List<ImportFieldInfo> importFieldInfos = new ArrayList<>();
+
+        Queue<HeaderNode> nodeQueue = new LinkedList<>();
+        rootNode.fillFieldPath();
+        nodeQueue.addAll(rootNode.getChildren());
+
+        while (!nodeQueue.isEmpty()) {
+            int columnIndex = COLUMN_START_IDX;
+            int queueSize = nodeQueue.size();
+            for (int i = 0; i < queueSize; i++) {
+                HeaderNode currNode = nodeQueue.poll();
+                String currFieldPath = currNode.getFieldPath();
+
+                // 추가적으로 탐색해야 하는 자식 요소는 Queue에 넣기
+                nodeQueue.addAll(currNode.getChildren());
+
+                // 자식 요소가 더 이상 없으면 말단 필드 목록에 추가
+                int numberOfChildren = currNode.getChildren().size();
+                if (numberOfChildren == 0) {
+                    ImportFieldInfo importFieldInfo = new ImportFieldInfo(currFieldPath, currNode.getType(), columnIndex);
+                    importFieldInfos.add(importFieldInfo);
+                }
+
+                // Column Index
+                int colSpan = numberOfChildren == 0 ? 1 : numberOfChildren;
+                columnIndex = columnIndex + colSpan;
+            }
+        }
+
+        return importFieldInfos;
+    }
 
 }

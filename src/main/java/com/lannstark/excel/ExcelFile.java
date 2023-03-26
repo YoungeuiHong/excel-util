@@ -10,6 +10,8 @@ public interface ExcelFile<T> {
 
 	<T> List<T> read(Class<T> type) throws IOException;
 
+	List<Object> read() throws IOException;
+
 	void addRows(List<T> data);
 
 }

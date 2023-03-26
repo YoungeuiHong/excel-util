@@ -3,6 +3,7 @@ package com.lannstark.excel.xssf.onesheet;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lannstark.excel.xssf.XSSFExcelFile;
 import com.lannstark.resource.ImportFieldInfo;
+import com.lannstark.resource.collection.HeaderNode;
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
@@ -17,6 +18,10 @@ public final class OneSheetXSSFExcel<T> extends XSSFExcelFile<T> {
 
     public OneSheetXSSFExcel(InputStream inputStream, Class type) throws IOException {
         super(inputStream, type);
+    }
+
+    public OneSheetXSSFExcel(InputStream inputStream, HeaderNode rootNode) throws IOException {
+        super(inputStream, rootNode);
     }
 
     @Override
