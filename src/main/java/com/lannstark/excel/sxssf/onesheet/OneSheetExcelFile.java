@@ -2,6 +2,9 @@ package com.lannstark.excel.sxssf.onesheet;
 
 import com.lannstark.excel.sxssf.SXSSFExcelFile;
 import com.lannstark.resource.DataFormatDecider;
+import com.lannstark.resource.DefaultDataFormatDecider;
+import com.lannstark.resource.collection.HeaderNode;
+import org.apache.poi.xssf.streaming.SXSSFSheet;
 
 import java.util.List;
 
@@ -31,6 +34,10 @@ public final class OneSheetExcelFile<T> extends SXSSFExcelFile<T> {
 		super(data, type, dataFormatDecider);
 	}
 
+	public OneSheetExcelFile(List<T> data, HeaderNode headerNode) {
+		super(data, headerNode, new DefaultDataFormatDecider());
+	}
+
 	@Override
 	protected void validateData(List<T> data) {
 		int maxRows = supplyExcelVersion.getMaxRows();
@@ -54,6 +61,15 @@ public final class OneSheetExcelFile<T> extends SXSSFExcelFile<T> {
 		int bodyStartRowIndex = currentRowIndex + resource.getExcelHeader().getHeaderHeight() - 1;
 		for (Object renderedData : data) {
 			renderBody(renderedData, bodyStartRowIndex++, COLUMN_START_INDEX);
+		}
+
+		// Auto size column
+		if (sheet instanceof SXSSFSheet) {
+			((SXSSFSheet) sheet).trackAllColumnsForAutoSizing();
+		}
+
+		for (int colIdx = sheet.getRow(ROW_START_INDEX).getFirstCellNum(); colIdx < sheet.getRow(ROW_START_INDEX).getLastCellNum(); colIdx++) {
+			sheet.autoSizeColumn(colIdx, true);
 		}
 	}
 

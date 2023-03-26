@@ -1,19 +1,23 @@
 package com.lannstark.excel.sxssf;
 
+import com.fasterxml.jackson.core.JsonPointer;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.lannstark.excel.ExcelFile;
 import com.lannstark.exception.ExcelInternalException;
 import com.lannstark.resource.*;
+import com.lannstark.resource.collection.HeaderNode;
 import org.apache.poi.ss.SpreadsheetVersion;
-import org.apache.poi.ss.usermodel.Cell;
-import org.apache.poi.ss.usermodel.Row;
-import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.*;
 import org.apache.poi.ss.util.CellRangeAddress;
+import org.apache.poi.ss.util.RegionUtil;
 import org.apache.poi.xssf.streaming.SXSSFWorkbook;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static com.lannstark.utils.SuperClassReflectionUtils.getField;
 
@@ -55,6 +59,13 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 		renderExcel(data);
 	}
 
+	public SXSSFExcelFile(List<T> data, HeaderNode rootNode, DataFormatDecider dataFormatDecider) {
+		validateData(data);
+		this.wb = new SXSSFWorkbook();
+		this.resource = ExcelRenderResourceFactory.prepareRenderResource(rootNode, wb, dataFormatDecider);
+		renderExcel(data);
+	}
+
 	protected void validateData(List<T> data) { }
 
 	protected abstract void renderExcel(List<T> data);
@@ -73,20 +84,31 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 			headerCell.adjustFirstIndex(rowStartIndex, columnStartIndex);
 			Row row = sheet.getRow(headerCell.getFirstRow());
 			Cell cell = row.createCell(headerCell.getFirstCol());
-			cell.setCellStyle(resource.getCellStyle(fieldPath, ExcelRenderLocation.HEADER));
 			cell.setCellValue(headerCell.getHeaderName());
+			cell.setCellStyle(resource.getCellStyle(fieldPath, ExcelRenderLocation.HEADER));
 
 			if (headerCell.containsMoreThanOneCell()) {
 				sheet.addMergedRegion(new CellRangeAddress(
 						headerCell.getFirstRow(), headerCell.getLastRow(), headerCell.getFirstCol(), headerCell.getLastCol()));
 			}
 		}
+
+		setBordersToMergedCells(sheet);
 	}
 
 	protected void renderBody(Object data, int rowIndex, int columnStartIndex) {
 		Row row = sheet.createRow(rowIndex);
 		int columnIndex = columnStartIndex;
-		for (String fieldPath : resource.getFieldPaths()) {
+		// TODO Refactor
+		List<String> leafNodeFieldPaths =
+				resource.getExcelHeader().getExcelHeaderCellMap().entrySet()
+						.stream().filter(entry -> resource.getFieldPaths().contains(entry.getKey()))
+						.sorted(Map.Entry.comparingByValue(Comparator.comparingInt(ExcelHeaderCell::getFirstCol)))
+						.map(entry -> { return entry.getKey(); })
+						.collect(Collectors.toList());
+
+
+		for (String fieldPath : leafNodeFieldPaths) {
 			// 말단 Field인 경우에만 Body에 데이터 작성
 			if (!resource.getLeafFieldPaths().contains(fieldPath)) {
 				continue;
@@ -94,7 +116,12 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 			Cell cell = row.createCell(columnIndex++);
 			try {
 				cell.setCellStyle(resource.getCellStyle(fieldPath, ExcelRenderLocation.BODY));
-				Object cellValue = getDataValue(fieldPath, data);
+				Object cellValue = null;
+				if (data instanceof ObjectNode) {
+					cellValue = getJsonDataValue(fieldPath, (ObjectNode) data);
+				} else {
+					cellValue = getDataValue(fieldPath, data);
+				}
 				renderCellValue(cell, cellValue);
 			} catch (Exception e) {
 				throw new ExcelInternalException(e.getMessage(), e);
@@ -118,6 +145,15 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 		return data;
 	}
 
+	private Object getJsonDataValue(String fieldPath, ObjectNode data) {
+		JsonPointer jsonPointer = JsonPointer.compile(fieldPath);
+
+		// JsonPointer를 사용하여 특정 필드의 값을 가져옴
+		JsonNode jsonNode = data.at(jsonPointer);
+
+		return jsonNode.asText();
+	}
+
 	private void renderCellValue(Cell cell, Object cellValue) {
 		if (cellValue instanceof Number) {
 			Number numberValue = (Number) cellValue;
@@ -137,6 +173,16 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 	public <T> List<T> read(Class<T> type) throws IOException {
 		// SXSSF Excel is a readonly file.
 		return null;
+	}
+
+	private void setBordersToMergedCells(Sheet sheet) {
+		List<CellRangeAddress> mergedRegions = sheet.getMergedRegions();
+		for (CellRangeAddress rangeAddress : mergedRegions) {
+			RegionUtil.setBorderTop(BorderStyle.THIN, rangeAddress, sheet);
+			RegionUtil.setBorderLeft(BorderStyle.THIN, rangeAddress, sheet);
+			RegionUtil.setBorderRight(BorderStyle.THIN, rangeAddress, sheet);
+			RegionUtil.setBorderBottom(BorderStyle.THIN, rangeAddress, sheet);
+		}
 	}
 
 }

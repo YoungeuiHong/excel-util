@@ -6,6 +6,7 @@ import com.lannstark.ExcelColumn;
 import com.lannstark.ExcelColumnStyle;
 import com.lannstark.exception.InvalidExcelCellStyleException;
 import com.lannstark.exception.NoExcelColumnAnnotationsException;
+import com.lannstark.resource.collection.HeaderNode;
 import com.lannstark.resource.collection.PreCalculatedCellStyleMap;
 import com.lannstark.style.ExcelCellStyle;
 import com.lannstark.style.NoExcelCellStyle;
@@ -22,6 +23,67 @@ import static com.lannstark.utils.SuperClassReflectionUtils.getAnnotation;
  * ExcelRenderResourceFactory
  */
 public final class ExcelRenderResourceFactory {
+
+	public static ExcelRenderResource prepareRenderResource(HeaderNode rootNode, Workbook wb, DataFormatDecider dataFormatDecider) {
+		// ExcelRenderResource 필드
+		PreCalculatedCellStyleMap styleMap = new PreCalculatedCellStyleMap(dataFormatDecider);
+		ExcelHeader excelHeader = new ExcelHeader();
+		List<String> fieldPaths = new ArrayList<>();
+		List<String> leafFieldPaths = new ArrayList<>();
+
+		rootNode.fillFieldPath();
+		Queue<HeaderNode> nodeQueue = new LinkedList<>();
+		nodeQueue.addAll(rootNode.getChildren());
+
+		int currRow = 0;
+		int currDepth = 1;
+
+		while (!nodeQueue.isEmpty()) {
+			int currCol = 0;
+
+			int queueSize = nodeQueue.size();
+			for (int i = 0; i < queueSize; i++) {
+				HeaderNode currNode = nodeQueue.poll();
+
+				// StyleMap에 정보 넣기
+				// - Header 스타일
+				styleMap.put(currNode.getType(), ExcelCellKey.of(currNode.getFieldPath(), ExcelRenderLocation.HEADER), currNode.getHeaderRGB(), wb);
+
+				// - Body 스타일
+				styleMap.put(currNode.getType(), ExcelCellKey.of(currNode.getFieldPath(), ExcelRenderLocation.BODY), currNode.getBodyRGB(), wb);
+
+				// Field Path 정보 셋팅
+				fieldPaths.add(currNode.getFieldPath());
+				if (currNode.getChildren().size() == 0) {
+					leafFieldPaths.add(currNode.getFieldPath());
+				}
+
+				// Excel Header 정보 셋팅
+				int heightOfHeader = rootNode.getHeightOfHeaderNode();
+				excelHeader.setHeaderHeight(heightOfHeader);
+				int numberOfChildren = currNode.getChildren().size();
+				int rowHeight = numberOfChildren == 0 ? heightOfHeader - currDepth + 1 : 1;
+				int colSpan = numberOfChildren == 0 ? 1 : numberOfChildren;
+				ExcelHeaderCell excelHeaderCell = new ExcelHeaderCell(
+						currNode.getColumnName(),
+						currRow,
+						currRow + rowHeight -1,
+						currCol,
+						currCol + colSpan -1
+				);
+				excelHeader.put(currNode.getFieldPath(), excelHeaderCell);
+				currCol = currCol + colSpan; // 현재 위치한 Column의 인덱스 변경
+
+				// 추가적으로 탐색해야 하는 자식 요소는 Queue에 넣기
+				nodeQueue.addAll(currNode.getChildren());
+			}
+			// 현재 위치한 Row의 인덱스와 Header의 Depth 변경
+			currDepth++;
+			currRow++;
+		}
+
+		return new ExcelRenderResource(styleMap, excelHeader, fieldPaths, leafFieldPaths);
+	}
 
 	// TODO Refactor
 	public static ExcelRenderResource prepareRenderResource(Class<?> type, Workbook wb,
