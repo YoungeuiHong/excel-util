@@ -55,6 +55,19 @@ public class ExcelFileTest {
     }
 
     @Test
+    @DisplayName("Create OneSheetExcelFile By HeaderNode And Map")
+    public void createOneSheetExcelFileByHeaderNodeAndMap() {
+        ExcelFile excelFile = new OneSheetExcelFile(getSampleFieldNodeData(), getSampleHeaderNode());
+
+        try {
+            String fileName = String.join(File.separator, RESOURCES_PATH, "header_node_map_excel_test.xlsx");
+            excelFile.write(new FileOutputStream(new File(fileName)));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Test
     @DisplayName("Import one sheet XSSF Excel file (Case: various value type)")
     public void importOneSheetXSSFExcelFile() throws IOException {
         createVariousTypeExcel();
@@ -166,6 +179,20 @@ public class ExcelFileTest {
         addJsonNode(rootNode, "String", "/root/second/second_second", "2-2");
 
         List<ObjectNode> data = Arrays.asList(rootNode, rootNode, rootNode);
+
+        return data;
+    }
+
+    private List<Map<String, Object>> getSampleFieldNodeData() {
+        List<Map<String, Object>> data = new ArrayList<>();
+
+        Map<String, Object> row = new HashMap<>();
+        row.put("/root/first/first_first/first_first_first", "1-1-1");
+        row.put("/root/first/first_second", "0.12");
+        row.put("/root/second/second_first", "111");
+        row.put("/root/second/second_second", "1-2");
+
+        data.add(row);
 
         return data;
     }

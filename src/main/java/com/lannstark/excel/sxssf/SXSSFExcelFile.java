@@ -119,6 +119,8 @@ public abstract class SXSSFExcelFile<T> implements ExcelFile<T> {
 				Object cellValue = null;
 				if (data instanceof ObjectNode) {
 					cellValue = getJsonDataValue(fieldPath, (ObjectNode) data);
+				} else if (data instanceof Map) {
+					cellValue = ((Map<String, Object>) data).get(fieldPath);
 				} else {
 					cellValue = getDataValue(fieldPath, data);
 				}
