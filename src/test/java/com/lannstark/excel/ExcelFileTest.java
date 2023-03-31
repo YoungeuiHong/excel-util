@@ -99,6 +99,16 @@ public class ExcelFileTest {
         System.out.println(gson.toJson(data));
     }
 
+    @Test
+    @DisplayName("Import one sheet XSSF Excel file as Flat Data (Case: HeaderNode)")
+    public void importOneSheetXSSFExcelFileViaHeaderNodeAsFlatData() throws IOException {
+        createHeaderNodeExcel();
+        FileInputStream inputStream = new FileInputStream(new File(String.join(File.separator, RESOURCES_PATH, "header_node_excel_test.xlsx")));
+        ExcelFile excelFile = new OneSheetXSSFExcel(inputStream, getSampleHeaderNode());
+        List<Object> data = excelFile.readFlat();
+        System.out.println(gson.toJson(data));
+    }
+
     private List<StudentDto> getSampleStudentDtoList() {
         //
         List<StudentDto> data = Arrays.asList(

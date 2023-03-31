@@ -10,6 +10,8 @@ import org.apache.poi.ss.usermodel.Sheet;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.lannstark.utils.JsonUtils.addJsonNode;
 import static com.lannstark.utils.JsonUtils.mapper;
@@ -30,12 +32,15 @@ public final class OneSheetXSSFExcel<T> extends XSSFExcelFile<T> {
         for (int rowIdx = resource.getRowStartIdx(); rowIdx <= sheet.getLastRowNum(); rowIdx++) {
             Row row = sheet.getRow(rowIdx);
             ObjectNode rootNode = mapper.createObjectNode();
+            Map<String, Object> rowMap = new HashMap<>();
             for (ImportFieldInfo info: resource.getImportFieldInfos()) {
                 Cell cell = row.getCell(info.getColumnIndex());
                 String value = dataFormatter.formatCellValue(cell);
                 addJsonNode(rootNode, info.getFieldSimpleName(), info.getJsonPointer(), value);
+                rowMap.put(info.getJsonPointer(), value);
             }
             this.data.add(rootNode);
+            this.flatData.add(rowMap);
         }
     }
 }

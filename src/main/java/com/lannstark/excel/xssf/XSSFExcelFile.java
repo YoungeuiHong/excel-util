@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static com.lannstark.utils.JsonUtils.gson;
 import static com.lannstark.utils.JsonUtils.mapper;
@@ -21,6 +22,7 @@ public abstract class XSSFExcelFile<T> implements ExcelFile<T> {
     protected XSSFWorkbook wb;
     protected ExcelImporterResource resource;
     protected List<ObjectNode> data = new ArrayList<>();
+    protected List<Map<String, Object>> flatData = new ArrayList<>();
     protected final DataFormatter dataFormatter = new DataFormatter();
 
     protected XSSFExcelFile(InputStream inputStream, Class<T> type) throws IOException {
@@ -54,6 +56,11 @@ public abstract class XSSFExcelFile<T> implements ExcelFile<T> {
             dataList.add(gson.fromJson(json, Object.class));
         }
         return dataList;
+    }
+
+    public List<Map<String, Object>> readFlat() {
+        //
+        return flatData;
     }
 
     public void write(OutputStream stream) throws IOException {
